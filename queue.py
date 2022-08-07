@@ -26,45 +26,61 @@ def animate():
 t = threading.Thread(target=animate)
 t.start()
 dt = datetime.now()
-url = 'jenkins/ajaxBuildQueue'
+url = 'jenkins.com/ajaxBuildQueue'
 reqs = requests.get(url, verify=False)
 soup = BeautifulSoup(reqs.text, 'html.parser')
 
-jobs_dict = {key: [] for key in ["ubuntu_waiting_ok", "ubuntu_ghost",
+jobs_dict = {key: [] for key in ["linux_waiting_ok", "linux_ghost",
                                  "macos_waiting_ok", "macos_ghost",
                                  "windows_waiting_ok", "windows_ghost",
+                                 "maintenance_waiting_ok", "maintenance_ghost",
                                  "frameworks_waiting_ok", "frameworks_ghost",
+                                 "nightly_waiting_ok", "nightly_ghost",
                                  "others_waiting_ok", "others_ghost"]}
+# print(soup)
+link_list = soup.find_all('a', href=re.compile("private-ci|ci-maintenance"))
 
-link_list = soup.find_all('a', href=re.compile("private-ci"))
+# print()
+# for x in link_list:
+#    print(x)
 
-for link in link_list:
-    # print(f"{link_list.index(link) + 1}/{len(link_list)} https://jenkins.com{link.get('href')}")
-    link = f"https://jenkins.com{link.get('href')}"
+linuxToCheck = ['ubuntu18', 'ubuntu20', 'debian', 'android', 'yocto', 'rhel8']
+for x in link_list:
+
+    search_string = re.search(r'tooltip="(.*?)</a', str(x)).group(1)
+    link = f"https://jenkins.com{x.get('href')}"
     page = urllib.request.urlopen(link).read()
     value = (page.decode("UTF-8").find("Progress:"))
+
     if value == -1:
-        if "linux-ubuntu" in link:
-            jobs_dict["ubuntu_ghost"].append(link)
-        elif "linux-macos" in link:
+        if "macos1015" in search_string:
             jobs_dict["macos_ghost"].append(link)
-        elif "frameworks.ai.openvino" in link:
-            jobs_dict["frameworks_ghost"].append(link)
-        elif "windows" in link:
+        elif "windows" in search_string:
             jobs_dict["windows_ghost"].append(link)
+        elif any(linux in search_string for linux in linuxToCheck):
+            jobs_dict["linux_ghost"].append(link)
+        elif "maintenance" in search_string:
+            jobs_dict["maintenance_ghost"].append(link)
+        elif "frameworks" in search_string:
+            jobs_dict["frameworks_ghost"].append(link)
         else:
             jobs_dict["others_ghost"].append(link)
     else:
-        if "linux-ubuntu" in link:
-            jobs_dict["ubuntu_waiting_ok"].append(link)
-        elif "linux-macos" in link:
+        if "macos1015" in search_string:
             jobs_dict["macos_waiting_ok"].append(link)
-        elif "frameworks.ai.openvino" in link:
-            jobs_dict["frameworks_waiting_ok"].append(link)
-        elif "windows" in link:
+        elif "windows" in search_string:
             jobs_dict["windows_waiting_ok"].append(link)
+        elif any(linux in search_string for linux in linuxToCheck):
+            jobs_dict["linux_waiting_ok"].append(link)
+        elif "maintenance" in search_string:
+            jobs_dict["maintenance_waiting_ok"].append(link)
+        elif "frameworks" in search_string:
+            jobs_dict["frameworks_waiting_ok"].append(link)
         else:
             jobs_dict["others_waiting_ok"].append(link)
+
+    # print(f"{link_list.index(link) + 1}/{len(link_list)} https://openvino-ci.toolbox.iotg.sclab.intel.com{link.get('href')}")
+
 done = True
 
 """
