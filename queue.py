@@ -44,7 +44,8 @@ link_list = soup.find_all('a', href=re.compile("private-ci|ci-maintenance"))
 # for x in link_list:
 #    print(x)
 
-linuxToCheck = ['ubuntu18', 'ubuntu20', 'debian', 'android', 'yocto', 'rhel8']
+linuxToCheck = ['ubuntu18', 'ubuntu20', 'debian', 'android', 'yocto', 'rhel8', 'nightlyJobs » build<wbr/>-linux',
+                'nightlyJobs » klocwork<wbr/>-linux']
 for x in link_list:
 
     search_string = re.search(r'tooltip="(.*?)</a', str(x)).group(1)
